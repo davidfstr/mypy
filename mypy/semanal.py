@@ -1912,7 +1912,7 @@ class SemanticAnalyzer(NodeVisitor):
         fullname = callee.fullname
         if fullname != 'mypy_extensions.TypedDict':
             return None
-        items, types, ok = self.parse_typeddict_args(call, fullname)
+        items, types, ok = self.parse_typeddict_call(call, fullname)
         if not ok:
             # Error. Construct dummy return value.
             return self.build_typeddict_typeinfo('TypedDict', [], [])
@@ -1932,46 +1932,67 @@ class SemanticAnalyzer(NodeVisitor):
         call.analyzed.set_line(call.line, call.column)
         return info
 
-    def parse_typeddict_args(self, call: CallExpr,
+    def parse_typeddict_call(self, call: CallExpr,
                              fullname: str) -> Tuple[List[str], List[Type], bool]:
-        # TODO: Share code with check_argument_count in checkexpr.py?
+        arg_kinds = call.arg_kinds
+        arg_names = call.arg_names
         args = call.args
-        if len(args) < 2:
-            return self.fail_typeddict_arg("Too few arguments for TypedDict()", call)
-        if len(args) > 2:
-            return self.fail_typeddict_arg("Too many arguments for TypedDict()", call)
-        # TODO: Support keyword arguments
-        if call.arg_kinds != [ARG_POS, ARG_POS]:
-            return self.fail_typeddict_arg("Unexpected arguments to TypedDict()", call)
-        if not isinstance(args[0], (StrExpr, BytesExpr, UnicodeExpr)):
+        
+        if not (len(args) >= 1 and (arg_kinds[0] == ARG_POS) and 
+                isinstance(args[0], (StrExpr, BytesExpr, UnicodeExpr))):
             return self.fail_typeddict_arg(
                 "TypedDict() expects a string literal as the first argument", call)
-        if not isinstance(args[1], DictExpr):
-            return self.fail_typeddict_arg(
-                "TypedDict() expects a dictionary literal as the second argument", call)
-        dictexpr = args[1]
-        items, types, ok = self.parse_typeddict_fields_with_types(dictexpr.items, call)
-        underscore = [item for item in items if item.startswith('_')]
-        if underscore:
-            self.fail("TypedDict() item names cannot start with an underscore: "
-                      + ', '.join(underscore), call)
-        return items, types, ok
+        
+        if len(args) >= 2 and all([ak == ARG_NAMED for ak in arg_kinds[1:]]):
+            # ex: TypedDict('Point', x=42, y=1337)
+            item_names = arg_names[1:]
+            item_type_exprs = args[1:]
+            return self.parse_typeddict_call_with_kwargs(
+                OrderedDict(zip(item_names, item_type_exprs)), call)
+        
+        if len(args) == 2 and arg_kinds[1] == ARG_POS:
+            unique_arg = args[1]
+            if isinstance(unique_arg, DictExpr):
+                # ex: TypedDict('Point', {'x': 42, 'y': 1337})
+                return self.parse_typeddict_call_with_dict(unique_arg, call)
+            if isinstance(unique_arg, CallExpr) and isinstance(unique_arg.analyzed, DictExpr):
+                # ex: TypedDict('Point', dict(x=42, y=1337))
+                return self.parse_typeddict_call_with_dict(unique_arg.analyzed, call)
+        
+        if len(args) == 1:
+            # ex: TypedDict('EmptyDict')
+            return self.parse_typeddict_call_with_kwargs(
+                OrderedDict(), call)
+        
+        return self.fail_typeddict_arg(
+            'TypedDict() expects keyword arguments, {...}, or dict(...) after the first argument', call)
+    
+    def parse_typeddict_call_with_dict(self,
+                                       kwargs: DictExpr,
+                                       context: Context) -> Tuple[List[str], List[Type], bool]:
+        item_name_exprs = [item[0] for item in kwargs.items]
+        item_type_exprs = [item[1] for item in kwargs.items]
 
-    def parse_typeddict_fields_with_types(self, dict_items: List[Tuple[Expression, Expression]],
-                                          context: Context) -> Tuple[List[str], List[Type], bool]:
-        items = []  # type: List[str]
+        item_names = []  # List[str]
+        for item_name_expr in item_name_exprs:
+            if not isinstance(item_name_expr, (StrExpr, BytesExpr, UnicodeExpr)):
+                return self.fail_typeddict_arg("Invalid TypedDict() item name", item_name_expr)
+            item_names.append(item_name_expr.value)
+
+        return self.parse_typeddict_call_with_kwargs(
+            OrderedDict(zip(item_names, item_type_exprs)), context)
+    
+    def parse_typeddict_call_with_kwargs(self,
+                                         kwargs: 'OrderedDict[str, Expression]',
+                                         context: Context) -> Tuple[List[str], List[Type], bool]:
         types = []  # type: List[Type]
-        for (field_name_expr, field_type_expr) in dict_items:
-            if isinstance(field_name_expr, (StrExpr, BytesExpr, UnicodeExpr)):
-                items.append(field_name_expr.value)
-            else:
-                return self.fail_typeddict_arg("Invalid TypedDict() field name", field_name_expr)
+        for item_type_expr in kwargs.values():
             try:
-                type = expr_to_unanalyzed_type(field_type_expr)
+                type = expr_to_unanalyzed_type(item_type_expr)
             except TypeTranslationError:
-                return self.fail_typeddict_arg('Invalid field type', field_type_expr)
+                return self.fail_typeddict_arg('Invalid item type', item_type_expr)
             types.append(self.anal_type(type))
-        return items, types, True
+        return list(kwargs.keys()), types, True
 
     def fail_typeddict_arg(self, message: str,
                            context: Context) -> Tuple[List[str], List[Type], bool]:
