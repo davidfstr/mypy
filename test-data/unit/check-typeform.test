@@ -1,0 +1,15 @@
+[case testRecognizesUnparameterizedTypeFormInAnnotation]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx: TypeForm = str
+reveal_type(typx)  # N: Revealed type is "TypeForm[Any]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testRecognizesParameterizedTypeFormInAnnotation]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx: TypeForm[str] = str
+reveal_type(typx)  # N: Revealed type is "TypeForm[builtins.str]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
