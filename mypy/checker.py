@@ -7204,6 +7204,8 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         self, msg: str | ErrorMessage, context: Context, *, code: ErrorCode | None = None
     ) -> None:
         """Produce an error message."""
+        print(f'FIXME: TypeChecker.fail: {msg=}')
+        #import pdb; pdb.set_trace()  # FIXME
         if isinstance(msg, ErrorMessage):
             self.msg.fail(msg.value, context, code=msg.code)
             return
