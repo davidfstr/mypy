@@ -656,6 +656,17 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
                 self.fail("Type[...] can't contain another Type[...]", t, code=codes.VALID_TYPE)
                 item = AnyType(TypeOfAny.from_error)
             return TypeType.make_normalized(item, line=t.line, column=t.column)
+        elif fullname in ("typing_extensions.TypeForm", "typing.TypeForm"):
+            if len(t.args) == 0:
+                any_type = self.get_omitted_any(t)
+                return TypeType(any_type, line=t.line, column=t.column, is_type_form=True)
+            if len(t.args) != 1:
+                type_str = "TypeForm[...]"
+                self.fail(
+                    type_str + " must have exactly one type argument", t, code=codes.VALID_TYPE
+                )
+            item = self.anal_type(t.args[0])
+            return TypeType.make_normalized(item, line=t.line, column=t.column, is_type_form=True)
         elif fullname == "typing.ClassVar":
             if self.nesting_level > 0:
                 self.fail(
