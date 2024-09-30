@@ -13,3 +13,11 @@ typx: TypeForm[str] = str
 reveal_type(typx)  # N: Revealed type is "TypeForm[builtins.str]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+[case testCanAssignTypeExpressionToTypeFormVariable]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx: TypeForm[str | None] = str | None
+reveal_type(typx)  # N: Revealed type is "TypeForm[Union[builtins.str, None]]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]

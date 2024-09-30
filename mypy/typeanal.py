@@ -666,7 +666,7 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
                     type_str + " must have exactly one type argument", t, code=codes.VALID_TYPE
                 )
             item = self.anal_type(t.args[0])
-            return TypeType.make_normalized(item, line=t.line, column=t.column, is_type_form=True)
+            return TypeType(item, line=t.line, column=t.column, is_type_form=True)
         elif fullname == "typing.ClassVar":
             if self.nesting_level > 0:
                 self.fail(
