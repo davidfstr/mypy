@@ -3151,6 +3151,7 @@ class SemanticAnalyzer(
         self.store_final_status(s)
         self.check_classvar(s)
         self.process_type_annotation(s)
+        self.analyze_rvalue_as_type_form(s)
         self.apply_dynamic_class_hook(s)
         if not s.type:
             self.process_module_assignment(s.lvalues, s.rvalue, s)
@@ -3478,6 +3479,11 @@ class SemanticAnalyzer(
                 is_final=s.is_final_def,
                 has_explicit_value=has_explicit_value,
             )
+
+    def analyze_rvalue_as_type_form(self, s: AssignmentStmt) -> None:
+        calculate_type_forms = TYPE_FORM in self.options.enable_incomplete_feature
+        if calculate_type_forms:
+            s.rvalue.as_type = self.try_parse_as_type_expression(s.rvalue)
 
     def apply_dynamic_class_hook(self, s: AssignmentStmt) -> None:
         if not isinstance(s.rvalue, CallExpr):
@@ -7380,6 +7386,26 @@ class SemanticAnalyzer(
                 return ()
             names.append(specifier.fullname)
         return tuple(names)
+
+    def try_parse_as_type_expression(self, value_or_type_expr: Expression):
+        """Try to parse value_or_type_expr as a type expression.
+        If parsing fails return None and emit no errors."""
+        original_errors = self.errors
+        self.errors = Errors(Options())
+        try:
+            t = self.expr_to_analyzed_type(value_or_type_expr)
+            if self.errors.is_errors():
+                raise TypeTranslationError
+            if isinstance(t, UnboundType):
+                raise TypeTranslationError
+            if isinstance(t, PlaceholderType):
+                raise TypeTranslationError
+        except TypeTranslationError:
+            # Rvalue is not a type expression. It must be a value expression.
+            t = None
+        finally:
+            self.errors = original_errors
+        return t
 
 
 def replace_implicit_first_type(sig: FunctionLike, new: Type) -> FunctionLike:

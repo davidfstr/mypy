@@ -4268,33 +4268,43 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             always_allow_any = lvalue_type is not None and not isinstance(
                 get_proper_type(lvalue_type), AnyType
             )
-            rvalue_type = self.expr_checker.accept(
-                rvalue, lvalue_type, always_allow_any=always_allow_any
-            )
-            if (
-                isinstance(get_proper_type(lvalue_type), UnionType)
-                # Skip literal types, as they have special logic (for better errors).
-                and not isinstance(get_proper_type(rvalue_type), LiteralType)
-                and not self.simple_rvalue(rvalue)
-            ):
-                # Try re-inferring r.h.s. in empty context, and use that if it
-                # results in a narrower type. We don't do this always because this
-                # may cause some perf impact, plus we want to partially preserve
-                # the old behavior. This helps with various practical examples, see
-                # e.g. testOptionalTypeNarrowedByGenericCall.
-                with self.msg.filter_errors() as local_errors, self.local_type_map() as type_map:
-                    alt_rvalue_type = self.expr_checker.accept(
-                        rvalue, None, always_allow_any=always_allow_any
-                    )
+            if (isinstance(lvalue_type, TypeType) and
+                    lvalue_type.is_type_form and
+                    (rvalue_as_type := rvalue.as_type) is not None):
+                rvalue_type: Type = TypeType(
+                    rvalue_as_type,
+                    line=rvalue_as_type.line,
+                    column=rvalue_as_type.column,
+                    is_type_form=True
+                )
+            else:
+                rvalue_type = self.expr_checker.accept(
+                    rvalue, lvalue_type, always_allow_any=always_allow_any
+                )
                 if (
-                    not local_errors.has_new_errors()
-                    # Skip Any type, since it is special cased in binder.
-                    and not isinstance(get_proper_type(alt_rvalue_type), AnyType)
-                    and is_valid_inferred_type(alt_rvalue_type)
-                    and is_proper_subtype(alt_rvalue_type, rvalue_type)
+                    isinstance(get_proper_type(lvalue_type), UnionType)
+                    # Skip literal types, as they have special logic (for better errors).
+                    and not isinstance(get_proper_type(rvalue_type), LiteralType)
+                    and not self.simple_rvalue(rvalue)
                 ):
-                    rvalue_type = alt_rvalue_type
-                    self.store_types(type_map)
+                    # Try re-inferring r.h.s. in empty context, and use that if it
+                    # results in a narrower type. We don't do this always because this
+                    # may cause some perf impact, plus we want to partially preserve
+                    # the old behavior. This helps with various practical examples, see
+                    # e.g. testOptionalTypeNarrowedByGenericCall.
+                    with self.msg.filter_errors() as local_errors, self.local_type_map() as type_map:
+                        alt_rvalue_type = self.expr_checker.accept(
+                            rvalue, None, always_allow_any=always_allow_any
+                        )
+                    if (
+                        not local_errors.has_new_errors()
+                        # Skip Any type, since it is special cased in binder.
+                        and not isinstance(get_proper_type(alt_rvalue_type), AnyType)
+                        and is_valid_inferred_type(alt_rvalue_type)
+                        and is_proper_subtype(alt_rvalue_type, rvalue_type)
+                    ):
+                        rvalue_type = alt_rvalue_type
+                        self.store_types(type_map)
             if isinstance(rvalue_type, DeletedType):
                 self.msg.deleted_as_rvalue(rvalue_type, context)
             if isinstance(lvalue_type, DeletedType):

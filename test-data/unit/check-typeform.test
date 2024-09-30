@@ -13,3 +13,51 @@ typx: TypeForm[str] = str
 reveal_type(typx)  # N: Revealed type is "TypeForm[builtins.str]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+[case testCanAssignTypeExpressionToUnionTypeFormVariable]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx: TypeForm[str | None] = str | None
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCannotAssignTypeExpressionToTypeFormVariableWithIncompatibleItemType]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx: TypeForm[str] = int  # E: Incompatible types in assignment (expression has type "TypeForm[int]", variable has type "TypeForm[str]")
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCanAssignValueExpressionToTypeFormVariableIfValueIsATypeForm1]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx1: TypeForm = str
+typx2: TypeForm = typx1  # looks like a type expression: name
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCanAssignValueExpressionToTypeFormVariableIfValueIsATypeForm2]
+# flags: --python-version 3.14
+from typing import TypeForm
+def identity_tf(x: TypeForm) -> TypeForm:
+    return x
+typx1: TypeForm = str
+typx2: TypeForm = identity_tf(typx1)  # does not look like a type expression
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCannotAssignValueExpressionToTypeFormVariableIfValueIsNotATypeForm]
+# flags: --python-version 3.14
+from typing import TypeForm
+val: int = 42
+typx: TypeForm = val  # E: Incompatible types in assignment (expression has type "int", variable has type "TypeForm[Any]")
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCanAssignNoneTypeExpressionToTypeFormVariable]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx: TypeForm = None
+reveal_type(typx)  # N: Revealed type is "TypeForm[Any]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]

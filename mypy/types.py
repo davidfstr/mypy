@@ -3057,15 +3057,15 @@ class TypeType(ProperType):
         self.is_type_form = is_type_form
 
     @staticmethod
-    def make_normalized(item: Type, *, line: int = -1, column: int = -1, is_type_form: bool = False) -> ProperType:
+    def make_normalized(item: Type, *, line: int = -1, column: int = -1) -> ProperType:
         item = get_proper_type(item)
         if isinstance(item, UnionType):
             return UnionType.make_union(
-                [TypeType.make_normalized(union_item, is_type_form=is_type_form) for union_item in item.items],
+                [TypeType.make_normalized(union_item) for union_item in item.items],
                 line=line,
                 column=column,
             )
-        return TypeType(item, line=line, column=column, is_type_form=is_type_form)  # type: ignore[arg-type]
+        return TypeType(item, line=line, column=column)  # type: ignore[arg-type]
 
     def accept(self, visitor: TypeVisitor[T]) -> T:
         return visitor.visit_type_type(self)
