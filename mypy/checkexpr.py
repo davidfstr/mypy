@@ -1058,6 +1058,9 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                     self.chk.check_simple_assignment(
                         lvalue_type=item_expected_type,
                         rvalue=item_value,
+                        # Don't allow TypedDict values to be TypeForms at this time,
+                        # even if key is declared as TypeForm. May add support later.
+                        rvalue_as_type_form=None,
                         context=item_value,
                         msg=ErrorMessage(
                             message_registry.INCOMPATIBLE_TYPES.value, code=codes.TYPEDDICT_ITEM

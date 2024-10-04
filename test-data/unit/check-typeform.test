@@ -14,10 +14,16 @@ reveal_type(typx)  # N: Revealed type is "TypeForm[builtins.str]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-[case testCanAssignTypeExpressionToTypeFormVariable]
+[case testCanAssignTypeExpressionToUnionTypeFormVariable]
 # flags: --python-version 3.14
 from typing import TypeForm
 typx: TypeForm[str | None] = str | None
-reveal_type(typx)  # N: Revealed type is "TypeForm[Union[builtins.str, None]]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCannotAssignTypeExpressionToTypeFormVariableWithIncompatibleItemType]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx: TypeForm[str] = int  # E: Incompatible types in assignment (expression has type "TypeForm[int]", variable has type "TypeForm[str]")
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]

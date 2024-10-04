@@ -3151,6 +3151,7 @@ class SemanticAnalyzer(
         self.store_final_status(s)
         self.check_classvar(s)
         self.process_type_annotation(s)
+        self.analyze_rvalue_as_type_form(s)
         self.apply_dynamic_class_hook(s)
         if not s.type:
             self.process_module_assignment(s.lvalues, s.rvalue, s)
@@ -3478,6 +3479,10 @@ class SemanticAnalyzer(
                 is_final=s.is_final_def,
                 has_explicit_value=has_explicit_value,
             )
+
+    def analyze_rvalue_as_type_form(self, s: AssignmentStmt) -> None:
+        if isinstance(s.type, TypeType) and s.type.is_type_form:
+            s.rvalue_as_type_form = self.anal_type(self.expr_to_unanalyzed_type(s.rvalue))
 
     def apply_dynamic_class_hook(self, s: AssignmentStmt) -> None:
         if not isinstance(s.rvalue, CallExpr):

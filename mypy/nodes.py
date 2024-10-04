@@ -1298,6 +1298,7 @@ class AssignmentStmt(Statement):
     __slots__ = (
         "lvalues",
         "rvalue",
+        "rvalue_as_type_form",
         "type",
         "unanalyzed_type",
         "new_syntax",
@@ -1311,6 +1312,8 @@ class AssignmentStmt(Statement):
     lvalues: list[Lvalue]
     # This is a TempNode if and only if no rvalue (x: t).
     rvalue: Expression
+    # Rvalue parsed as a type expression, or None if lvalue not declared as TypeForm.
+    rvalue_as_type_form: mypy.types.Type | None
     # Declared type in a comment, may be None.
     type: mypy.types.Type | None
     # Original, not semantically analyzed type in annotation (used for reprocessing)
@@ -1340,6 +1343,7 @@ class AssignmentStmt(Statement):
         super().__init__()
         self.lvalues = lvalues
         self.rvalue = rvalue
+        self.rvalue_as_type_form = None
         self.type = type
         self.unanalyzed_type = type
         self.new_syntax = new_syntax

@@ -1513,6 +1513,9 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             self.check_simple_assignment(
                 arg.variable.type,
                 arg.initializer,
+                # TODO: Support TypeForm values as function arguments.
+                #       Pass arg.initializer_as_type_form, once defined on Argument.
+                None,
                 context=arg.initializer,
                 msg=ErrorMessage(msg, code=codes.ASSIGNMENT),
                 lvalue_name="argument",
@@ -2858,6 +2861,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             self.check_simple_assignment(
                 lvalue_type,
                 assign.rvalue,
+                assign.rvalue_as_type_form,
                 node,
                 msg=message,
                 lvalue_name="local name",
@@ -2931,7 +2935,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         # as X | Y.
         if not (s.is_alias_def and self.is_stub):
             with self.enter_final_context(s.is_final_def):
-                self.check_assignment(s.lvalues[-1], s.rvalue, s.type is None, s.new_syntax)
+                self.check_assignment(s.lvalues[-1], s.rvalue, s.rvalue_as_type_form, s.type is None, s.new_syntax)
 
         if s.is_alias_def:
             self.check_type_alias_rvalue(s)
@@ -2982,6 +2986,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         self,
         lvalue: Lvalue,
         rvalue: Expression,
+        rvalue_as_type_form: Type | None,
         infer_lvalue_type: bool = True,
         new_syntax: bool = False,
     ) -> None:
@@ -3079,7 +3084,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
                 ):  # Ignore member access to modules
                     instance_type = self.expr_checker.accept(lvalue.expr)
                     rvalue_type, lvalue_type, infer_lvalue_type = self.check_member_assignment(
-                        instance_type, lvalue_type, rvalue, context=rvalue
+                        instance_type, lvalue_type, rvalue, rvalue_as_type_form, context=rvalue
                     )
                 else:
                     # Hacky special case for assigning a literal None
@@ -3109,7 +3114,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
                             lvalue_type = make_optional_type(lvalue_type)
                             self.set_inferred_type(lvalue.node, lvalue, lvalue_type)
 
-                    rvalue_type = self.check_simple_assignment(lvalue_type, rvalue, context=rvalue)
+                    rvalue_type = self.check_simple_assignment(lvalue_type, rvalue, rvalue_as_type_form, context=rvalue)
 
                 # Special case: only non-abstract non-protocol classes can be assigned to
                 # variables with explicit type Type[A], where A is protocol or abstract.
@@ -4254,6 +4259,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
         self,
         lvalue_type: Type | None,
         rvalue: Expression,
+        rvalue_as_type_form: Type | None,
         context: Context,
         msg: ErrorMessage = message_registry.INCOMPATIBLE_TYPES_IN_ASSIGNMENT,
         lvalue_name: str = "variable",
@@ -4268,33 +4274,42 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             always_allow_any = lvalue_type is not None and not isinstance(
                 get_proper_type(lvalue_type), AnyType
             )
-            rvalue_type = self.expr_checker.accept(
-                rvalue, lvalue_type, always_allow_any=always_allow_any
-            )
-            if (
-                isinstance(get_proper_type(lvalue_type), UnionType)
-                # Skip literal types, as they have special logic (for better errors).
-                and not isinstance(get_proper_type(rvalue_type), LiteralType)
-                and not self.simple_rvalue(rvalue)
-            ):
-                # Try re-inferring r.h.s. in empty context, and use that if it
-                # results in a narrower type. We don't do this always because this
-                # may cause some perf impact, plus we want to partially preserve
-                # the old behavior. This helps with various practical examples, see
-                # e.g. testOptionalTypeNarrowedByGenericCall.
-                with self.msg.filter_errors() as local_errors, self.local_type_map() as type_map:
-                    alt_rvalue_type = self.expr_checker.accept(
-                        rvalue, None, always_allow_any=always_allow_any
-                    )
+            if rvalue_as_type_form is not None:
+                assert isinstance(lvalue_type, TypeType) and lvalue_type.is_type_form
+                rvalue_type = TypeType(
+                    rvalue_as_type_form,
+                    line=rvalue_as_type_form.line,
+                    column=rvalue_as_type_form.column,
+                    is_type_form=True
+                )
+            else:
+                rvalue_type = self.expr_checker.accept(
+                    rvalue, lvalue_type, always_allow_any=always_allow_any
+                )
                 if (
-                    not local_errors.has_new_errors()
-                    # Skip Any type, since it is special cased in binder.
-                    and not isinstance(get_proper_type(alt_rvalue_type), AnyType)
-                    and is_valid_inferred_type(alt_rvalue_type)
-                    and is_proper_subtype(alt_rvalue_type, rvalue_type)
+                    isinstance(get_proper_type(lvalue_type), UnionType)
+                    # Skip literal types, as they have special logic (for better errors).
+                    and not isinstance(get_proper_type(rvalue_type), LiteralType)
+                    and not self.simple_rvalue(rvalue)
                 ):
-                    rvalue_type = alt_rvalue_type
-                    self.store_types(type_map)
+                    # Try re-inferring r.h.s. in empty context, and use that if it
+                    # results in a narrower type. We don't do this always because this
+                    # may cause some perf impact, plus we want to partially preserve
+                    # the old behavior. This helps with various practical examples, see
+                    # e.g. testOptionalTypeNarrowedByGenericCall.
+                    with self.msg.filter_errors() as local_errors, self.local_type_map() as type_map:
+                        alt_rvalue_type = self.expr_checker.accept(
+                            rvalue, None, always_allow_any=always_allow_any
+                        )
+                    if (
+                        not local_errors.has_new_errors()
+                        # Skip Any type, since it is special cased in binder.
+                        and not isinstance(get_proper_type(alt_rvalue_type), AnyType)
+                        and is_valid_inferred_type(alt_rvalue_type)
+                        and is_proper_subtype(alt_rvalue_type, rvalue_type)
+                    ):
+                        rvalue_type = alt_rvalue_type
+                        self.store_types(type_map)
             if isinstance(rvalue_type, DeletedType):
                 self.msg.deleted_as_rvalue(rvalue_type, context)
             if isinstance(lvalue_type, DeletedType):
@@ -4313,7 +4328,7 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
             return rvalue_type
 
     def check_member_assignment(
-        self, instance_type: Type, attribute_type: Type, rvalue: Expression, context: Context
+        self, instance_type: Type, attribute_type: Type, rvalue: Expression, rvalue_as_type_form: Type | None, context: Context
     ) -> tuple[Type, Type, bool]:
         """Type member assignment.
 
