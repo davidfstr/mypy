@@ -5834,12 +5834,7 @@ class ExpressionChecker(ExpressionVisitor[Type]):
         old_is_callee = self.is_callee
         self.is_callee = is_callee
         try:
-            if isinstance(type_context, TypeType) and type_context.is_type_form:
-                # TODO: Parse a type that is actually analyzed...
-                #       Need a SemanticAnalyzer to use expr_to_analyzed_type()
-                from mypy.exprtotype import expr_to_unanalyzed_type
-                typ = expr_to_unanalyzed_type(node, self.chk.options)
-            elif allow_none_return and isinstance(node, CallExpr):
+            if allow_none_return and isinstance(node, CallExpr):
                 typ = self.visit_call_expr(node, allow_none_return=True)
             elif allow_none_return and isinstance(node, YieldFromExpr):
                 typ = self.visit_yield_from_expr(node, allow_none_return=True)
