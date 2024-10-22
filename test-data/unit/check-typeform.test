@@ -27,3 +27,27 @@ from typing import TypeForm
 typx: TypeForm[str] = int  # E: Incompatible types in assignment (expression has type "TypeForm[int]", variable has type "TypeForm[str]")
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+[case testCanAssignValueExpressionToTypeFormVariableIfValueIsATypeForm]
+# flags: --python-version 3.14
+from typing import TypeForm
+typx1: TypeForm = str
+typx2: TypeForm = typx1
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCannotAssignValueExpressionToTypeFormVariableIfValueIsNotATypeForm]
+# flags: --python-version 3.14
+from typing import TypeForm
+val: int = 42
+typx: TypeForm = val  # E: Incompatible types in assignment (expression has type "int", variable has type "TypeForm[Any]")
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testCanAssignNoneTypeExpressionToTypeFormVariable]
+# flags: --python-version 3.14
+from typing import TypeForm
+val: int = 42
+typx: TypeForm = val  # E: Incompatible types in assignment (expression has type "int", variable has type "TypeForm[Any]")
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]

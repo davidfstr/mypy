@@ -3482,7 +3482,22 @@ class SemanticAnalyzer(
 
     def analyze_rvalue_as_type_form(self, s: AssignmentStmt) -> None:
         if isinstance(s.type, TypeType) and s.type.is_type_form:
-            s.rvalue_as_type_form = self.anal_type(self.expr_to_unanalyzed_type(s.rvalue))
+            # Try to parse rvalue as a type expression, suppressing any errors
+            original_errors = self.errors
+            self.errors = Errors(Options())
+            try:
+                t1 = self.expr_to_unanalyzed_type(s.rvalue)
+                t2 = self.anal_type(t1)
+                if self.errors.is_errors():
+                    raise TypeTranslationError
+                if isinstance(t2, UnboundType):
+                    raise TypeTranslationError
+            except TypeTranslationError:
+                # Rvalue is not a type expression. It must be a value expression.
+                t2 = None
+            finally:
+                self.errors = original_errors
+            s.rvalue_as_type_form = t2
 
     def apply_dynamic_class_hook(self, s: AssignmentStmt) -> None:
         if not isinstance(s.rvalue, CallExpr):
