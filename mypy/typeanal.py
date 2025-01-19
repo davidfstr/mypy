@@ -48,7 +48,7 @@ from mypy.nodes import (
     check_arg_names,
     get_nongen_builtins,
 )
-from mypy.options import INLINE_TYPEDDICT, Options
+from mypy.options import INLINE_TYPEDDICT, Options, TYPE_FORM
 from mypy.plugin import AnalyzeTypeContext, Plugin, TypeAnalyzerPluginInterface
 from mypy.semanal_shared import (
     SemanticAnalyzerCoreInterface,
@@ -657,6 +657,12 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
                 item = AnyType(TypeOfAny.from_error)
             return TypeType.make_normalized(item, line=t.line, column=t.column)
         elif fullname in ("typing_extensions.TypeForm", "typing.TypeForm"):
+            if TYPE_FORM not in self.options.enable_incomplete_feature:
+                self.fail(
+                    "TypeForm is experimental,"
+                    " must be enabled with --enable-incomplete-feature=TypeForm",
+                    t,
+                )
             if len(t.args) == 0:
                 any_type = self.get_omitted_any(t)
                 return TypeType(any_type, line=t.line, column=t.column, is_type_form=True)
@@ -1253,7 +1259,18 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
                     t,
                 )
             required_keys = req_keys
-            fallback = self.named_type("typing._TypedDict")
+            try:
+                fallback = self.named_type("typing._TypedDict")
+            except AssertionError as e:
+                if str(e) == 'typing._TypedDict':
+                    # Can happen when running mypy tests, typing._TypedDict
+                    # is not defined by typing.pyi stubs, and
+                    # try_parse_as_type_expression() is called on an dict
+                    # expression that looks like an inline TypedDict type.
+                    self.fail("Internal error: typing._TypedDict not found", t)
+                    fallback = AnyType
+                else:
+                    raise
             for typ in t.extra_items_from:
                 analyzed = self.analyze_type(typ)
                 p_analyzed = get_proper_type(analyzed)

@@ -186,7 +186,7 @@ from mypy.nodes import (
     type_aliases_source_versions,
     typing_extensions_aliases,
 )
-from mypy.options import Options
+from mypy.options import Options, TYPE_FORM
 from mypy.patterns import (
     AsPattern,
     ClassPattern,
@@ -5682,8 +5682,11 @@ class SemanticAnalyzer(
                     a.accept(self)
         else:
             # Normal call expression.
+            calculate_type_forms = TYPE_FORM in self.options.enable_incomplete_feature
             for a in expr.args:
                 a.accept(self)
+                if calculate_type_forms:
+                    a.as_type = self.try_parse_as_type_expression(a)
 
             if (
                 isinstance(expr.callee, MemberExpr)
@@ -7387,13 +7390,19 @@ class SemanticAnalyzer(
             names.append(specifier.fullname)
         return tuple(names)
 
-    def try_parse_as_type_expression(self, value_or_type_expr: Expression):
-        """Try to parse value_or_type_expr as a type expression.
+    def try_parse_as_type_expression(self, maybe_type_expr: Expression) -> Type|None:
+        """Try to parse maybe_type_expr as a type expression.
         If parsing fails return None and emit no errors."""
-        original_errors = self.errors
+        # Save SemanticAnalyzer state
+        original_errors = self.errors  # altered by fail()
+        original_num_incomplete_refs = self.num_incomplete_refs  # altered by record_incomplete_ref()
+        original_progress = self.progress  # altered by defer()
+        original_deferred = self.deferred  # altered by defer()
+        original_deferral_debug_context_len = len(self.deferral_debug_context)  # altered by defer()
+
         self.errors = Errors(Options())
         try:
-            t = self.expr_to_analyzed_type(value_or_type_expr)
+            t = self.expr_to_analyzed_type(maybe_type_expr)
             if self.errors.is_errors():
                 raise TypeTranslationError
             if isinstance(t, UnboundType):
@@ -7401,10 +7410,15 @@ class SemanticAnalyzer(
             if isinstance(t, PlaceholderType):
                 raise TypeTranslationError
         except TypeTranslationError:
-            # Rvalue is not a type expression. It must be a value expression.
+            # Not a type expression. It must be a value expression.
             t = None
         finally:
+            # Restore SemanticAnalyzer state
             self.errors = original_errors
+            self.num_incomplete_refs = original_num_incomplete_refs
+            self.progress = original_progress
+            self.deferred = original_deferred
+            del self.deferral_debug_context[original_deferral_debug_context_len:]
         return t
 
 

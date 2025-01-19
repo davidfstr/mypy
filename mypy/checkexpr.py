@@ -2574,6 +2574,18 @@ class ExpressionChecker(ExpressionVisitor[Type]):
                     callee_arg_kind,
                     allow_unpack=isinstance(callee_arg_type, UnpackType),
                 )
+                if (isinstance(callee_arg_type, TypeType) and
+                        callee_arg_type.is_type_form and
+                        (arg_as_type := args[actual].as_type) is not None):
+                    # If callee is expecting a TypeForm and the caller arg is a
+                    # parsable as a type expression then interpret the
+                    # caller arg as a type expression that evaluates to a TypeForm.
+                    expanded_actual = actual_type = TypeType(
+                        arg_as_type,
+                        line=arg_as_type.line,
+                        column=arg_as_type.column,
+                        is_type_form=True
+                    )
                 check_arg(
                     expanded_actual,
                     actual_type,
