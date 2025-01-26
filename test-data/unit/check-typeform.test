@@ -66,6 +66,16 @@ reveal_type(typx)  # N: Revealed type is "TypeForm[Any]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
+[case testCanAssignTypeExpressionToTypeFormVariableDeclaredEarlier]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+from typing import Type, TypeForm
+typ: Type
+typ = int | None  # E: Incompatible types in assignment (expression has type "object", variable has type "Type[Any]")
+typx: TypeForm
+typx = int | None
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
 # === Function Parameter ===
 
 [case testCanPassTypeExpressionToTypeFormParameterInFunction]
