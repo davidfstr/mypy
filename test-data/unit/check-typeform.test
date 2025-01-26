@@ -160,3 +160,97 @@ def maybe_int_type() -> TypeForm:
 reveal_type(maybe_int_type())  # N: Revealed type is "TypeForm[Any]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+# === Assignability, is_subtype ===
+
+[case testTypeFormToTypeFormAssignability]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] is assignable to TypeForm[T2] iff T1 is assignable to T2.
+# - In particular TypeForm[Any] is assignable to TypeForm[Any].
+from typing import TypeForm
+INT_OR_STR_TF: TypeForm[int | str] = int | str
+INT_TF: TypeForm[int] = int
+STR_TF: TypeForm[str] = str
+OBJECT_TF: TypeForm[object] = object
+ANY_TF: TypeForm = object
+reveal_type(ANY_TF)  # N: Revealed type is "TypeForm[Any]"
+typx1: TypeForm[int | str] = INT_OR_STR_TF
+typx2: TypeForm[int | str] = INT_TF
+typx3: TypeForm[int | str] = STR_TF
+typx4: TypeForm[int | str] = OBJECT_TF  # E: Incompatible types in assignment (expression has type "TypeForm[object]", variable has type "TypeForm[Union[int, str]]")
+typx5: TypeForm[int | str] = ANY_TF  # (no error, surprisingly)
+typx6: TypeForm[int] = INT_OR_STR_TF  # E: Incompatible types in assignment (expression has type "TypeForm[Union[int, str]]", variable has type "TypeForm[int]")
+typx7: TypeForm[int] = INT_TF
+typx8: TypeForm[int] = STR_TF  # E: Incompatible types in assignment (expression has type "TypeForm[str]", variable has type "TypeForm[int]")
+typx9: TypeForm[int] = OBJECT_TF  # E: Incompatible types in assignment (expression has type "TypeForm[object]", variable has type "TypeForm[int]")
+typx10: TypeForm[int] = ANY_TF  # (no error, surprisingly)
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testTypeToTypeFormAssignability]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - Type[C] is assignable to TypeForm[T] iff C is assignable to T.
+# - In particular Type[Any] is assignable to TypeForm[Any].
+from typing import Type, TypeForm
+INT_T: Type[int] = int
+STR_T: Type[str] = str
+OBJECT_T: Type[object] = object
+ANY_T: Type = object
+reveal_type(ANY_T)  # N: Revealed type is "Type[Any]"
+typx1: TypeForm[int | str] = INT_T
+typx2: TypeForm[int | str] = STR_T
+typx3: TypeForm[int | str] = OBJECT_T  # E: Incompatible types in assignment (expression has type "Type[object]", variable has type "TypeForm[Union[int, str]]")
+typx4: TypeForm[int | str] = ANY_T  # (no error, surprisingly)
+typx5: TypeForm[int] = INT_T
+typx6: TypeForm[int] = STR_T  # E: Incompatible types in assignment (expression has type "Type[str]", variable has type "TypeForm[int]")
+typx7: TypeForm[int] = OBJECT_T  # E: Incompatible types in assignment (expression has type "Type[object]", variable has type "TypeForm[int]")
+typx8: TypeForm[int] = ANY_T  # (no error, surprisingly)
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testTypeFormToTypeAssignability]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T] is NOT assignable to Type[C].
+# - In particular TypeForm[Any] is NOT assignable to Type[Any].
+from typing import Type, TypeForm
+INT_OR_STR_TF: TypeForm[int | str] = int | str
+INT_TF: TypeForm[int] = int
+STR_TF: TypeForm[str] = str
+OBJECT_TF: TypeForm[object] = object
+ANY_TF: TypeForm = object
+reveal_type(ANY_TF)  # N: Revealed type is "TypeForm[Any]"
+typ1: Type[int] = INT_OR_STR_TF  # E: Incompatible types in assignment (expression has type "TypeForm[Union[int, str]]", variable has type "Type[int]")
+typ2: Type[int] = INT_TF
+typ3: Type[int] = STR_TF  # E: Incompatible types in assignment (expression has type "TypeForm[str]", variable has type "Type[int]")
+typ4: Type[int] = OBJECT_TF  # E: Incompatible types in assignment (expression has type "TypeForm[object]", variable has type "Type[int]")
+typ5: Type[int] = ANY_TF  # (no error, surprisingly)
+typ6: Type[object] = INT_OR_STR_TF
+typ7: Type[object] = INT_TF
+typ8: Type[object] = STR_TF
+typ9: Type[object] = OBJECT_TF
+typ10: Type[object] = ANY_TF  # (no error, surprisingly)
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+# NOTE: This test doesn't involve TypeForm at all, but is still illustrative
+#       when compared with similarly structured TypeForm-related tests above.
+[case testTypeToTypeAssignability]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - Type[C1] is assignable to Type[C2] iff C1 is assignable to C2.
+# - In particular Type[Any] is assignable to Type[Any].
+from typing import Type
+INT_T: Type[int] = int
+STR_T: Type[str] = str
+OBJECT_T: Type[object] = object
+ANY_T: Type = object
+reveal_type(ANY_T)  # N: Revealed type is "Type[Any]"
+typ1: Type[int] = INT_T
+typ2: Type[int] = STR_T  # E: Incompatible types in assignment (expression has type "Type[str]", variable has type "Type[int]")
+typ3: Type[int] = OBJECT_T  # E: Incompatible types in assignment (expression has type "Type[object]", variable has type "Type[int]")
+typ4: Type[int] = ANY_T  # (no error, surprisingly)
+typ5: Type[object] = INT_T
+typ6: Type[object] = STR_T
+typ7: Type[object] = OBJECT_T
+typ8: Type[object] = ANY_T  # (no error, surprisingly)
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
