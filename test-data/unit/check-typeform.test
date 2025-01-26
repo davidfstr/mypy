@@ -149,3 +149,14 @@ def sum_ints(x: int | None, y: int) -> tuple[int, int]:
     return ((x or 0), y)
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+# === Return ===
+
+[case testCanReturnTypeExpressionInFunctionWithTypeFormReturnType]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+from typing import TypeForm
+def maybe_int_type() -> TypeForm:
+    return int | None
+reveal_type(maybe_int_type())  # N: Revealed type is "TypeForm[Any]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]

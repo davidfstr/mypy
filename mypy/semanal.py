@@ -5167,6 +5167,8 @@ class SemanticAnalyzer(
             self.fail('"return" outside function', s)
         if s.expr:
             s.expr.accept(self)
+            if TYPE_FORM in self.options.enable_incomplete_feature:
+                s.expr.as_type = self.try_parse_as_type_expression(s.expr)
 
     def visit_raise_stmt(self, s: RaiseStmt) -> None:
         self.statement = s
