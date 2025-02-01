@@ -292,7 +292,7 @@ reveal_type([A_TF, B_TF][0])  # N: Revealed type is "TypeForm[__main__.AB]"
 
 [case testTypeToTypeFormJoin]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
-# - TypeForm[T1] join TypeForm[T2] == TypeForm[T1 join T2]
+# - TypeForm[T1] join Type[T2] == TypeForm[T1 join T2]
 from typing import Type, TypeForm
 class AB:
     pass
@@ -308,7 +308,7 @@ reveal_type([A_T, B_TF][0])  # N: Revealed type is "TypeForm[__main__.AB]"
 
 [case testTypeFormToTypeJoin]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
-# - TypeForm[T1] join TypeForm[T2] == TypeForm[T1 join T2]
+# - TypeForm[T1] join Type[T2] == TypeForm[T1 join T2]
 from typing import Type, TypeForm
 class AB:
     pass
@@ -326,7 +326,7 @@ reveal_type([A_TF, B_T][0])  # N: Revealed type is "TypeForm[__main__.AB]"
 #       when compared with similarly structured TypeForm-related tests above.
 [case testTypeToTypeJoin]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
-# - TypeForm[T1] join TypeForm[T2] == TypeForm[T1 join T2]
+# - Type[T1] join Type[T2] == Type[T1 join T2]
 from typing import Type, TypeForm
 class AB:
     pass
@@ -337,5 +337,83 @@ class B(AB):
 A_T: Type[A] = A
 B_T: Type[B] = B
 reveal_type([A_T, B_T][0])  # N: Revealed type is "Type[__main__.AB]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+# === meet_types ===
+
+[case testTypeFormToTypeFormMeet]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] meet TypeForm[T2] == TypeForm[T1 meet T2]
+from typing import Callable, TypeForm, TypeVar
+class AB:
+    pass
+class A(AB):
+    pass
+class B(AB):
+    pass
+class C(AB):
+    pass
+T = TypeVar('T')
+def f(x: Callable[[T, T], None]) -> T: pass  # type: ignore[empty-body]
+def g(x: TypeForm[A | B], y: TypeForm[B | C]) -> None: pass
+reveal_type(f(g))  # N: Revealed type is "TypeForm[__main__.B]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testTypeToTypeFormMeet]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] meet Type[T2] == Type[T1 meet T2]
+from typing import Callable, Type, TypeForm, TypeVar
+class AB:
+    pass
+class A(AB):
+    pass
+class B(AB):
+    pass
+class C(AB):
+    pass
+T = TypeVar('T')
+def f(x: Callable[[T, T], None]) -> T: pass  # type: ignore[empty-body]
+def g(x: Type[B], y: TypeForm[B | C]) -> None: pass
+reveal_type(f(g))  # N: Revealed type is "Type[__main__.B]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testTypeFormToTypeMeet]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] meet Type[T2] == Type[T1 meet T2]
+from typing import Callable, Type, TypeForm, TypeVar
+class AB:
+    pass
+class A(AB):
+    pass
+class B(AB):
+    pass
+class C(AB):
+    pass
+T = TypeVar('T')
+def f(x: Callable[[T, T], None]) -> T: pass  # type: ignore[empty-body]
+def g(x: TypeForm[A | B], y: Type[B]) -> None: pass
+reveal_type(f(g))  # N: Revealed type is "Type[__main__.B]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+# NOTE: This test doesn't involve TypeForm at all, but is still illustrative
+#       when compared with similarly structured TypeForm-related tests above.
+[case testTypeToTypeMeet]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - Type[T1] meet Type[T2] == Type[T1 meet T2]
+from typing import Callable, Type, TypedDict, TypeForm, TypeVar
+class AB(TypedDict):
+    a: str
+    b: str
+class BC(TypedDict):
+    b: str
+    c: str
+T = TypeVar('T')
+def f(x: Callable[[T, T], None]) -> T: pass  # type: ignore[empty-body]
+def g(x: Type[AB], y: Type[BC]) -> None: pass
+reveal_type(f(g))  # N: Revealed type is "Type[TypedDict({'b': builtins.str, 'c': builtins.str, 'a': builtins.str})]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]

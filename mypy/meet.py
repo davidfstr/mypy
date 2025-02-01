@@ -1037,10 +1037,16 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
 
     def visit_type_type(self, t: TypeType) -> ProperType:
         if isinstance(self.s, TypeType):
-            typ = self.meet(t.item, self.s.item)
-            if not isinstance(typ, NoneType):
-                typ = TypeType.make_normalized(typ, line=t.line)
-            return typ
+            if self.s.is_type_form and t.is_type_form:
+                typ = self.meet(t.item, self.s.item)
+                if not isinstance(typ, NoneType):
+                    typ = TypeType(typ, line=t.line, is_type_form=True)
+                return typ
+            else:
+                typ = self.meet(t.item, self.s.item)
+                if not isinstance(typ, NoneType):
+                    typ = TypeType.make_normalized(typ, line=t.line)
+                return typ
         elif isinstance(self.s, Instance) and self.s.type.fullname == "builtins.type":
             return t
         elif isinstance(self.s, CallableType):
