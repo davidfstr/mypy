@@ -3079,12 +3079,15 @@ class TypeType(ProperType):
         return self.item == other.item
 
     def serialize(self) -> JsonDict:
-        return {".class": "TypeType", "item": self.item.serialize()}
+        return {".class": "TypeType", "item": self.item.serialize(), "is_type_form": self.is_type_form}
 
     @classmethod
     def deserialize(cls, data: JsonDict) -> Type:
         assert data[".class"] == "TypeType"
-        return TypeType.make_normalized(deserialize_type(data["item"]))
+        if data["is_type_form"]:
+            return TypeType(deserialize_type(data["item"]), is_type_form=True)
+        else:
+            return TypeType.make_normalized(deserialize_type(data["item"]))
 
 
 class PlaceholderType(ProperType):

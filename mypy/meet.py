@@ -157,7 +157,11 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
     elif isinstance(narrowed, TypeVarType) and is_subtype(narrowed.upper_bound, declared):
         return narrowed
     elif isinstance(declared, TypeType) and isinstance(narrowed, TypeType):
-        return TypeType.make_normalized(narrow_declared_type(declared.item, narrowed.item))
+        item = narrow_declared_type(declared.item, narrowed.item)
+        if declared.is_type_form or narrowed.is_type_form:
+            return TypeType(item, is_type_form=True)
+        else:
+            return TypeType.make_normalized(item)
     elif (
         isinstance(declared, TypeType)
         and isinstance(narrowed, Instance)
