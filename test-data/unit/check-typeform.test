@@ -1,4 +1,4 @@
-# === TypeForm Type ===
+-- TypeForm Type
 
 [case testRecognizesUnparameterizedTypeFormInAnnotation]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
@@ -16,7 +16,8 @@ reveal_type(typx)  # N: Revealed type is "TypeForm[builtins.str]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-# === Assignment ===
+
+-- Type Expression Location: Assignment
 
 [case testCanAssignTypeExpressionToUnionTypeFormVariable]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
@@ -76,7 +77,8 @@ typx = int | None
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-# === Function Parameter ===
+
+-- Type Expression Location: Function Parameter
 
 [case testCanPassTypeExpressionToTypeFormParameterInFunction]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
@@ -150,7 +152,8 @@ def sum_ints(x: int | None, y: int) -> tuple[int, int]:
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-# === Return ===
+
+-- Type Expression Location: Return Statement
 
 [case testCanReturnTypeExpressionInFunctionWithTypeFormReturnType]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
@@ -161,7 +164,8 @@ reveal_type(maybe_int_type())  # N: Revealed type is "TypeForm[Any]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-# === Assignability, is_subtype ===
+
+-- Assignability (is_subtype)
 
 [case testTypeFormToTypeFormAssignability]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
@@ -272,7 +276,8 @@ any3: Any = ANY_TF
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-# === join_types ===
+
+-- Join (join_types)
 
 [case testTypeFormToTypeFormJoin]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
@@ -340,7 +345,8 @@ reveal_type([A_T, B_T][0])  # N: Revealed type is "Type[__main__.AB]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-# === meet_types ===
+
+-- Meet (meet_types)
 
 [case testTypeFormToTypeFormMeet]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
