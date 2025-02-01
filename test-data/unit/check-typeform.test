@@ -255,7 +255,7 @@ typ8: Type[object] = ANY_T  # no error
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
 
-[case testTypeFormToObject]
+[case testTypeFormToObjectAssignability]
 # flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
 # - TypeForm[T] is assignable to object and Any.
 from typing import Any, TypeForm
@@ -269,5 +269,73 @@ obj3: object = ANY_TF
 any1: Any = INT_TF
 any2: Any = OBJECT_TF
 any3: Any = ANY_TF
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+# === join_types ===
+
+[case testTypeFormToTypeFormJoin]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] join TypeForm[T2] == TypeForm[T1 join T2]
+from typing import TypeForm
+class AB:
+    pass
+class A(AB):
+    pass
+class B(AB):
+    pass
+A_TF: TypeForm[A] = A
+B_TF: TypeForm[B] = B
+reveal_type([A_TF, B_TF][0])  # N: Revealed type is "TypeForm[__main__.AB]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testTypeToTypeFormJoin]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] join TypeForm[T2] == TypeForm[T1 join T2]
+from typing import Type, TypeForm
+class AB:
+    pass
+class A(AB):
+    pass
+class B(AB):
+    pass
+A_T: Type[A] = A
+B_TF: TypeForm[B] = B
+reveal_type([A_T, B_TF][0])  # N: Revealed type is "TypeForm[__main__.AB]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+[case testTypeFormToTypeJoin]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] join TypeForm[T2] == TypeForm[T1 join T2]
+from typing import Type, TypeForm
+class AB:
+    pass
+class A(AB):
+    pass
+class B(AB):
+    pass
+A_TF: TypeForm[A] = A
+B_T: Type[B] = B
+reveal_type([A_TF, B_T][0])  # N: Revealed type is "TypeForm[__main__.AB]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
+
+# NOTE: This test doesn't involve TypeForm at all, but is still illustrative
+#       when compared with similarly structured TypeForm-related tests above.
+[case testTypeToTypeJoin]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+# - TypeForm[T1] join TypeForm[T2] == TypeForm[T1 join T2]
+from typing import Type, TypeForm
+class AB:
+    pass
+class A(AB):
+    pass
+class B(AB):
+    pass
+A_T: Type[A] = A
+B_T: Type[B] = B
+reveal_type([A_T, B_T][0])  # N: Revealed type is "Type[__main__.AB]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
