@@ -500,7 +500,10 @@ class ExpandTypeVisitor(TrivialSyntheticTypeTranslator):
         # union of instances or Any).  Sadly we can't report errors
         # here yet.
         item = t.item.accept(self)
-        return TypeType.make_normalized(item)
+        if t.is_type_form:
+            return TypeType(item, is_type_form=True)
+        else:
+            return TypeType.make_normalized(item)
 
     def visit_type_alias_type(self, t: TypeAliasType) -> Type:
         # Target of the type alias cannot contain type variables (not bound by the type

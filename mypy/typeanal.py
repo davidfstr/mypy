@@ -1350,7 +1350,10 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
             return AnyType(TypeOfAny.from_error)
 
     def visit_type_type(self, t: TypeType) -> Type:
-        return TypeType.make_normalized(self.anal_type(t.item), line=t.line)
+        if t.is_type_form:
+            return TypeType(self.anal_type(t.item), line=t.line, is_type_form=True)
+        else:
+            return TypeType.make_normalized(self.anal_type(t.item), line=t.line)
 
     def visit_placeholder_type(self, t: PlaceholderType) -> Type:
         n = (
