@@ -3001,7 +3001,7 @@ class EllipsisType(ProperType):
 
 
 class TypeType(ProperType):
-    """For types like Type[User] or TypeForm[User].
+    """For types like Type[User] or TypeForm[User | None].
 
     Type[C] annotates variables that are class objects, constrained by
     the type argument.  See PEP 484 for more details.
