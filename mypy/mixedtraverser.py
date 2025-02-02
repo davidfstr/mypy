@@ -13,6 +13,7 @@ from mypy.nodes import (
     TypeAliasExpr,
     TypeApplication,
     TypedDictExpr,
+    TypeFormExpr,
     TypeVarExpr,
     Var,
     WithStmt,
@@ -94,6 +95,10 @@ class MixedTraverserVisitor(TraverserVisitor, TypeTraverserVisitor):
 
     def visit_cast_expr(self, o: CastExpr) -> None:
         super().visit_cast_expr(o)
+        o.type.accept(self)
+
+    def visit_type_form_expr(self, o: TypeFormExpr) -> None:
+        super().visit_type_form_expr(o)
         o.type.accept(self)
 
     def visit_assert_type_expr(self, o: AssertTypeExpr) -> None:

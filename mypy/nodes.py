@@ -2201,6 +2201,23 @@ class CastExpr(Expression):
         return visitor.visit_cast_expr(self)
 
 
+class TypeFormExpr(Expression):
+    """TypeForm(type) expression."""
+
+    __slots__ = ("type",)
+
+    __match_args__ = ("type",)
+
+    type: mypy.types.Type
+
+    def __init__(self, typ: mypy.types.Type) -> None:
+        super().__init__()
+        self.type = typ
+
+    def accept(self, visitor: ExpressionVisitor[T]) -> T:
+        return visitor.visit_type_form_expr(self)
+
+
 class AssertTypeExpr(Expression):
     """Represents a typing.assert_type(expr, type) call."""
 

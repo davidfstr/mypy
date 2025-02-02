@@ -47,6 +47,7 @@ from mypy.nodes import (
     TypeAliasExpr,
     TypeApplication,
     TypedDictExpr,
+    TypeFormExpr,
     TypeVarExpr,
     TypeVarTupleExpr,
     UnaryExpr,
@@ -228,6 +229,9 @@ class _Hasher(ExpressionVisitor[Optional[Key]]):
         return None
 
     def visit_cast_expr(self, e: CastExpr) -> None:
+        return None
+
+    def visit_type_form_expr(self, e: TypeFormExpr) -> None:
         return None
 
     def visit_assert_type_expr(self, e: AssertTypeExpr) -> None:

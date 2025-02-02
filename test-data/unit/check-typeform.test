@@ -423,3 +423,22 @@ def g(x: Type[AB], y: Type[BC]) -> None: pass
 reveal_type(f(g))  # N: Revealed type is "Type[TypedDict({'b': builtins.str, 'c': builtins.str, 'a': builtins.str})]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+
+-- TypeForm(...) Expression
+
+[case testTypeFormExpression]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+from typing import TypeForm
+tf1 = TypeForm(int | str)
+reveal_type(tf1)  # N: Revealed type is "TypeForm[Union[builtins.int, builtins.str]]"
+tf2 = TypeForm('int | str')
+reveal_type(tf2)  # N: Revealed type is "TypeForm[Union[builtins.int, builtins.str]]"
+tf3: TypeForm = TypeForm(int | str)
+reveal_type(tf3)  # N: Revealed type is "TypeForm[Any]"
+tf4: TypeForm = TypeForm(1)  # E: Invalid type: try using Literal[1] instead?
+tf5: TypeForm = TypeForm(int) | TypeForm(str)  # E: Invalid self argument "TypeForm[int]" to attribute function "__or__" with type "Callable[[type, object], object]" \
+                                               # E: Incompatible types in assignment (expression has type "object", variable has type "TypeForm[Any]")
+tf6: TypeForm = TypeForm(TypeForm(int) | TypeForm(str))  # E: TypeForm argument is not a type
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]

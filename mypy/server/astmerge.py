@@ -290,6 +290,10 @@ class NodeReplaceVisitor(TraverserVisitor):
         super().visit_cast_expr(node)
         self.fixup_type(node.type)
 
+    def visit_type_form_expr(self, node: TypeFormExpr) -> None:
+        super().visit_type_form_expr(node)
+        self.fixup_type(node.type)
+
     def visit_assert_type_expr(self, node: AssertTypeExpr) -> None:
         super().visit_assert_type_expr(node)
         self.fixup_type(node.type)

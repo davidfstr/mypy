@@ -167,6 +167,7 @@ from mypy.nodes import (
     TypeAliasStmt,
     TypeApplication,
     TypedDictExpr,
+    TypeFormExpr,
     TypeInfo,
     TypeParam,
     TypeVarExpr,
@@ -5681,6 +5682,26 @@ class SemanticAnalyzer(
             with self.allow_unbound_tvars_set():
                 for a in expr.args:
                     a.accept(self)
+        elif refers_to_fullname(
+            expr.callee, ("typing.TypeForm", "typing_extensions.TypeForm")
+        ):
+            # Special form TypeForm(...).
+            if not self.check_fixed_args(expr, 1, "TypeForm"):
+                return
+            # Translate first argument to an unanalyzed type.
+            try:
+                typ = self.expr_to_unanalyzed_type(expr.args[0])
+            except TypeTranslationError:
+                self.fail("TypeForm argument is not a type", expr)
+                # Suppress future error: "<typing special form>" not callable
+                expr.analyzed = CastExpr(expr.args[0], AnyType(TypeOfAny.from_error))
+                return
+            # Piggyback TypeFormExpr object to the CallExpr object; it takes
+            # precedence over the CallExpr semantics.
+            expr.analyzed = TypeFormExpr(typ)
+            expr.analyzed.line = expr.line
+            expr.analyzed.column = expr.column
+            expr.analyzed.accept(self)
         else:
             # Normal call expression.
             calculate_type_forms = TYPE_FORM in self.options.enable_incomplete_feature
@@ -5952,6 +5973,11 @@ class SemanticAnalyzer(
 
     def visit_cast_expr(self, expr: CastExpr) -> None:
         expr.expr.accept(self)
+        analyzed = self.anal_type(expr.type)
+        if analyzed is not None:
+            expr.type = analyzed
+
+    def visit_type_form_expr(self, expr: TypeFormExpr) -> None:
         analyzed = self.anal_type(expr.type)
         if analyzed is not None:
             expr.type = analyzed

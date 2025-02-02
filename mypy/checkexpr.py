@@ -90,6 +90,7 @@ from mypy.nodes import (
     TypeAliasExpr,
     TypeApplication,
     TypedDictExpr,
+    TypeFormExpr,
     TypeInfo,
     TypeVarExpr,
     TypeVarTupleExpr,
@@ -4612,6 +4613,10 @@ class ExpressionChecker(ExpressionVisitor[Type]):
             target_type, self.chk.options, self.chk.is_typeshed_stub, self.msg, context=expr
         )
         return target_type
+
+    def visit_type_form_expr(self, expr: TypeFormExpr) -> Type:
+        typ = expr.type
+        return TypeType.make_normalized(typ, line=typ.line, column=typ.column, is_type_form=True)
 
     def visit_assert_type_expr(self, expr: AssertTypeExpr) -> Type:
         source_type = self.accept(
