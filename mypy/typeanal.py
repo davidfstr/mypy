@@ -672,7 +672,7 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
                     type_str + " must have exactly one type argument", t, code=codes.VALID_TYPE
                 )
             item = self.anal_type(t.args[0])
-            return TypeType(item, line=t.line, column=t.column, is_type_form=True)
+            return TypeType.make_normalized(item, line=t.line, column=t.column, is_type_form=True)
         elif fullname == "typing.ClassVar":
             if self.nesting_level > 0:
                 self.fail(
@@ -1350,10 +1350,7 @@ class TypeAnalyser(SyntheticTypeVisitor[Type], TypeAnalyzerPluginInterface):
             return AnyType(TypeOfAny.from_error)
 
     def visit_type_type(self, t: TypeType) -> Type:
-        if t.is_type_form:
-            return TypeType(self.anal_type(t.item), line=t.line, is_type_form=True)
-        else:
-            return TypeType.make_normalized(self.anal_type(t.item), line=t.line)
+        return TypeType.make_normalized(self.anal_type(t.item), line=t.line, is_type_form=t.is_type_form)
 
     def visit_placeholder_type(self, t: PlaceholderType) -> Type:
         n = (

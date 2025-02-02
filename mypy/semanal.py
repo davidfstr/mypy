@@ -3481,8 +3481,7 @@ class SemanticAnalyzer(
             )
 
     def analyze_rvalue_as_type_form(self, s: AssignmentStmt) -> None:
-        calculate_type_forms = TYPE_FORM in self.options.enable_incomplete_feature
-        if calculate_type_forms:
+        if TYPE_FORM in self.options.enable_incomplete_feature:
             s.rvalue.as_type = self.try_parse_as_type_expression(s.rvalue)
 
     def apply_dynamic_class_hook(self, s: AssignmentStmt) -> None:

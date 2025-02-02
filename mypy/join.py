@@ -657,11 +657,11 @@ class TypeJoinVisitor(TypeVisitor[ProperType]):
 
     def visit_type_type(self, t: TypeType) -> ProperType:
         if isinstance(self.s, TypeType):
-            item = join_types(t.item, self.s.item)
-            if self.s.is_type_form or t.is_type_form:
-                return TypeType(item, line=t.line, is_type_form=True)
-            else:
-                return TypeType.make_normalized(item, line=t.line)
+            return TypeType.make_normalized(
+                join_types(t.item, self.s.item),
+                line=t.line,
+                is_type_form=self.s.is_type_form or t.is_type_form,
+            )
         elif isinstance(self.s, Instance) and self.s.type.fullname == "builtins.type":
             return self.s
         else:

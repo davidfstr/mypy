@@ -157,11 +157,10 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
     elif isinstance(narrowed, TypeVarType) and is_subtype(narrowed.upper_bound, declared):
         return narrowed
     elif isinstance(declared, TypeType) and isinstance(narrowed, TypeType):
-        item = narrow_declared_type(declared.item, narrowed.item)
-        if declared.is_type_form or narrowed.is_type_form:
-            return TypeType(item, is_type_form=True)
-        else:
-            return TypeType.make_normalized(item)
+        return TypeType.make_normalized(
+            narrow_declared_type(declared.item, narrowed.item),
+            is_type_form=declared.is_type_form or narrowed.is_type_form,
+        )
     elif (
         isinstance(declared, TypeType)
         and isinstance(narrowed, Instance)
@@ -1041,16 +1040,14 @@ class TypeMeetVisitor(TypeVisitor[ProperType]):
 
     def visit_type_type(self, t: TypeType) -> ProperType:
         if isinstance(self.s, TypeType):
-            if self.s.is_type_form and t.is_type_form:
-                typ = self.meet(t.item, self.s.item)
-                if not isinstance(typ, NoneType):
-                    typ = TypeType(typ, line=t.line, is_type_form=True)
-                return typ
-            else:
-                typ = self.meet(t.item, self.s.item)
-                if not isinstance(typ, NoneType):
-                    typ = TypeType.make_normalized(typ, line=t.line)
-                return typ
+            typ = self.meet(t.item, self.s.item)
+            if not isinstance(typ, NoneType):
+                typ = TypeType.make_normalized(
+                    typ,
+                    line=t.line,
+                    is_type_form=self.s.is_type_form and t.is_type_form,
+                )
+            return typ
         elif isinstance(self.s, Instance) and self.s.type.fullname == "builtins.type":
             return t
         elif isinstance(self.s, CallableType):

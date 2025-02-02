@@ -3057,15 +3057,19 @@ class TypeType(ProperType):
         self.is_type_form = is_type_form
 
     @staticmethod
-    def make_normalized(item: Type, *, line: int = -1, column: int = -1) -> ProperType:
+    def make_normalized(item: Type, *, line: int = -1, column: int = -1, is_type_form: bool = False) -> ProperType:
         item = get_proper_type(item)
-        if isinstance(item, UnionType):
-            return UnionType.make_union(
-                [TypeType.make_normalized(union_item) for union_item in item.items],
-                line=line,
-                column=column,
-            )
-        return TypeType(item, line=line, column=column)  # type: ignore[arg-type]
+        if is_type_form:
+            # Don't convert TypeForm[X | Y] to (TypeForm[X] | TypeForm[Y])
+            pass
+        else:
+            if isinstance(item, UnionType):
+                return UnionType.make_union(
+                    [TypeType.make_normalized(union_item) for union_item in item.items],
+                    line=line,
+                    column=column,
+                )
+        return TypeType(item, line=line, column=column, is_type_form=is_type_form)  # type: ignore[arg-type]
 
     def accept(self, visitor: TypeVisitor[T]) -> T:
         return visitor.visit_type_type(self)
@@ -3084,10 +3088,7 @@ class TypeType(ProperType):
     @classmethod
     def deserialize(cls, data: JsonDict) -> Type:
         assert data[".class"] == "TypeType"
-        if data["is_type_form"]:
-            return TypeType(deserialize_type(data["item"]), is_type_form=True)
-        else:
-            return TypeType.make_normalized(deserialize_type(data["item"]))
+        return TypeType.make_normalized(deserialize_type(data["item"]), is_type_form=data["is_type_form"])
 
 
 class PlaceholderType(ProperType):
