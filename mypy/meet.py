@@ -159,7 +159,7 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
     elif isinstance(declared, TypeType) and isinstance(narrowed, TypeType):
         return TypeType.make_normalized(
             narrow_declared_type(declared.item, narrowed.item),
-            is_type_form=declared.is_type_form or narrowed.is_type_form,
+            is_type_form=declared.is_type_form and narrowed.is_type_form,
         )
     elif (
         isinstance(declared, TypeType)
