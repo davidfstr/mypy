@@ -442,3 +442,17 @@ tf5: TypeForm = TypeForm(int) | TypeForm(str)  # E: Invalid self argument "TypeF
 tf6: TypeForm = TypeForm(TypeForm(int) | TypeForm(str))  # E: TypeForm argument is not a type
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+
+-- isinstance
+
+[case testTypeFormIsinstanceOfType]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+from typing import TypeForm
+typx: TypeForm[str] = str
+if isinstance(typx, type):
+    reveal_type(typx)  # N: Revealed type is "Type[builtins.str]"
+else:
+    reveal_type(typx)  # N: Revealed type is "TypeForm[builtins.str]"
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]

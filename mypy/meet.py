@@ -166,6 +166,17 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
         and isinstance(narrowed, Instance)
         and narrowed.type.is_metaclass()
     ):
+        if declared.is_type_form:
+            # The declared TypeForm[T] after narrowing must be a kind of
+            # type object at least as narrow as Type[T]
+            return narrow_declared_type(
+                TypeType.make_normalized(
+                    declared.item,
+                    line=declared.line,
+                    is_type_form=False,
+                ),
+                original_narrowed,
+            )
         # We'd need intersection types, so give up.
         return original_declared
     elif isinstance(declared, Instance):
