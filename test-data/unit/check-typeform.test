@@ -525,3 +525,31 @@ else:
     reveal_type(count)  # N: Revealed type is "Union[builtins.int, builtins.str]"
 [builtins fixtures/tuple.pyi]
 [typing fixtures/typing-full.pyi]
+
+
+-- Misc
+
+[case testTypeFormHasAllObjectAttributesAndMethods]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+from typing import TypeForm
+typx: TypeForm[int | str] = int | str
+print(typx.__class__)  # OK
+print(typx.__hash__())  # OK
+obj: object = typx
+[file builtins.py]
+class object:
+    def __init__(self) -> None: pass
+    __class__: None
+    def __hash__(self) -> int: pass
+def print(x):
+    raise BaseException()
+class int: pass
+class dict: pass
+class str: pass
+class type: pass
+class tuple: pass
+class ellipsis: pass
+class BaseException: pass
+class float: pass
+[typing fixtures/typing-full.pyi]
+
