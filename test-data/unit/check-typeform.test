@@ -553,3 +553,10 @@ class BaseException: pass
 class float: pass
 [typing fixtures/typing-full.pyi]
 
+[case testQuotedTypeFormsAreRecognized]
+# flags: --python-version 3.14 --enable-incomplete-feature=TypeForm
+from typing import TypeForm
+typx1: TypeForm[int | str] = 'int | str'  # OK
+typx2: TypeForm[int] = 'str'  # E: Incompatible types in assignment (expression has type "TypeForm[str]", variable has type "TypeForm[int]")
+[builtins fixtures/tuple.pyi]
+[typing fixtures/typing-full.pyi]
