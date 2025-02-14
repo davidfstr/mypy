@@ -4563,21 +4563,11 @@ class TypeChecker(NodeVisitor[None], CheckerPluginInterface):
                 allow_none_func_call = is_lambda or declared_none_return or declared_any_return
 
                 # Return with a value.
-                if (isinstance(return_type, TypeType) and
-                        return_type.is_type_form and
-                        (expr_as_type := s.expr.as_type) is not None):
-                    typ: ProperType = TypeType(
-                        expr_as_type,
-                        line=expr_as_type.line,
-                        column=expr_as_type.column,
-                        is_type_form=True
+                typ = get_proper_type(
+                    self.expr_checker.accept(
+                        s.expr, return_type, allow_none_return=allow_none_func_call
                     )
-                else:
-                    typ = get_proper_type(
-                        self.expr_checker.accept(
-                            s.expr, return_type, allow_none_return=allow_none_func_call
-                        )
-                    )
+                )
 
                 if defn.is_async_generator:
                     self.fail(message_registry.RETURN_IN_ASYNC_GENERATOR, s)
