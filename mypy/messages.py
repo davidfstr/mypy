@@ -2677,10 +2677,9 @@ def format_type_inner(
     elif isinstance(typ, TypeType):
         if typ.is_type_form:
             type_name = "TypeForm"
-            return f"{type_name}[{format(typ.item)}]"
         else:
             type_name = "type" if options.use_lowercase_names() else "Type"
-            return f"{type_name}[{format(typ.item)}]"
+        return f"{type_name}[{format(typ.item)}]"
     elif isinstance(typ, FunctionLike):
         func = typ
         if func.is_type_obj():

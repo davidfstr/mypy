@@ -173,6 +173,7 @@ def narrow_declared_type(declared: Type, narrowed: Type) -> Type:
                 TypeType.make_normalized(
                     declared.item,
                     line=declared.line,
+                    column=declared.column,
                     is_type_form=False,
                 ),
                 original_narrowed,
