@@ -1,0 +1,16 @@
+[PEP 747] Recognize TypeForm[T] type and values (#9773)
+
+User must opt-in to use TypeForm with --enable-incomplete-feature=TypeForm
+
+In particular:
+* Recognize TypeForm[T] as a kind of type that can be used in a type expression
+* Recognize a type expression literal as a TypeForm value in:
+    - assignments
+    - function calls
+    - return statements
+* Define the following relationships between TypeForm values:
+    - is_subtype
+    - join_types
+    - meet_types
+* Recognize the TypeForm(...) expression
+* Alter isinstance(typx, type) to narrow TypeForm[T] to Type[T]
